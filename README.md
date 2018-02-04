@@ -21,5 +21,6 @@ stack exec -- yesod devel
 
 O serviço estará disponível na porta 3000.
 
-Templates HTML devem ser colocados no diretório static/templates
-Scripts JS devem ser colocados no diretrio static/scripts e injetados no HTML através do arquivo templates/default-layout-wrapper.hamlet
+Templates HTML devem ser colocados no diretório static/templates.
+
+Scripts JS devem ser colocados no diretório static/scripts e injetados no HTML através do arquivo templates/default-layout-wrapper.hamlet

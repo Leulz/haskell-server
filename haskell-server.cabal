@@ -1,0 +1,10 @@
+name:                haskell-server
+version:             0.1.0.0
+build-type:          Simple
+cabal-version:       >=1.10
+
+executable haskell-server
+  main-is:             server.hs
+  build-depends:       base == 4.*,
+                       yesod,
+                       yesod-auth

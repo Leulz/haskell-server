@@ -1,2 +1,9 @@
-1) cabal sandbox init
-2) cabal install --only-dependencies
+Para definir o sandbox e instalar as dependências:
+```
+cabal sandbox init
+cabal install --only-dependencies
+```
+Para executar:
+```
+cabal exec runhaskell server.hs
+```

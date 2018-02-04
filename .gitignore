@@ -2,3 +2,4 @@
 *.aes
 dist/
 .cabal-sandbox/
+haskell-angular/static/bower_modules

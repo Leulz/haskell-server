@@ -1,0 +1,23 @@
+{
+  "name": "haskell-angular",
+  "version": "0.0.0",
+  "description": "Haskell with Angular",
+  "keywords": [
+      "haskell",
+      "angular"
+  ],
+  "license": "MIT",
+  "ignore": [
+      "**/.*",
+      "node_modules",
+      "bower_components",
+      "static/bower_modules",
+      "test",
+      "tests"
+  ],
+  "dependencies": {
+      "angular": "~1.5.3",
+      "angular-route": "~1.5.3",
+      "bootstrap": "~3.3.6"
+  }
+}

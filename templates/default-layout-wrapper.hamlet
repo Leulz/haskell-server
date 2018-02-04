@@ -20,3 +20,5 @@
     <script type="text/javascript" src="static/bower_modules/angular/angular.js">
     <script type="text/javascript" src="static/bower_modules/angular-route/angular-route.min.js">
     <script type="text/javascript" src="static/scripts/app.js">
+    <script type="text/javascript" src="static/scripts/gapi.js">
+    

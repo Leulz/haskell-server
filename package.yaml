@@ -38,6 +38,7 @@ dependencies:
 - fast-logger >=2.2 && <2.5
 - wai-logger >=2.2 && <2.4
 - load-env
+- email-validate
 - file-embed
 - safe
 - unordered-containers

@@ -17,7 +17,11 @@ import Text.Jasmine         (minifym)
 import Yesod.Default.Util   (addStaticContentExternal)
 import Yesod.Core.Types     (Logger)
 import Yesod.Auth.GoogleEmail2
+import Yesod.Auth.Message
 import qualified Yesod.Core.Unsafe as Unsafe
+
+import Text.Email.Validate
+import Data.ByteString.Char8 as C8
 
 -- | The foundation datatype for your application. This can be a good place to
 -- keep settings and values requiring initialization before your application
@@ -56,6 +60,9 @@ data MenuTypes
 -- type Handler = HandlerT App IO
 -- type Widget = WidgetT App IO ()
 mkYesodData "App" $(parseRoutesFile "config/routes")
+
+email_domain_permitted :: [Char]
+email_domain_permitted = "ccc.ufcg.edu.br"
 
 -- | A convenient synonym for creating forms.
 type Form x = Html -> MForm (HandlerT App IO) (FormResult x, Widget)
@@ -195,6 +202,9 @@ instance YesodPersist App where
 instance YesodPersistRunner App where
     getDBRunner = defaultGetDBRunner appConnPool
 
+isDomainPermitted :: ByteString -> Bool
+isDomainPermitted domain = (C8.unpack domain) == email_domain_permitted
+
 --TODO Add security by implementing HTTPS
 instance YesodAuth App where
     type AuthId App = UserId
@@ -207,13 +217,17 @@ instance YesodAuth App where
     redirectToReferer _ = True
 
     authenticate creds = runDB $ do
-        x <- getBy $ UniqueUser $ credsIdent creds
-        case x of
-            Just (Entity uid _) -> return $ Authenticated uid
-            Nothing -> Authenticated <$> insert User
-                { userIdent = credsIdent creds
-                , userMatricula = Nothing
-                }
+        let domainIsValid = isDomainPermitted <$> (domainPart <$> emailAddress(encodeUtf8(credsIdent creds)))
+        case domainIsValid of
+            Just False -> return $ UserError $ InvalidEmailAddress
+            _ -> do 
+                x <- getBy $ UniqueUser $ credsIdent creds
+                case x of
+                    Just (Entity uid _) -> return $ Authenticated uid
+                    Nothing -> Authenticated <$> insert User
+                        { userIdent = credsIdent creds
+                        , userMatricula = Nothing
+                        }
 
     -- You can add other plugins like Google Email, email or OAuth here
     authPlugins app =
@@ -221,6 +235,7 @@ instance YesodAuth App where
         ]
 
     authHttpManager = getHttpManager
+    renderAuthMessage _ _ = portugueseMessage
 
 -- | Access function to determine if a user is logged in.
 isAuthenticated :: Handler AuthResult

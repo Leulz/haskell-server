@@ -3,11 +3,11 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE QuasiQuotes #-}
 module Handler.Home where
-
 import Import
+import Data.Aeson
 import Yesod.Form.Bootstrap3 (BootstrapFormLayout (..), renderBootstrap3)
-import Text.Julius (RawJS (..))
 
 -- Define our data that will be used for creating the form.
 data FileForm = FileForm
@@ -15,37 +15,30 @@ data FileForm = FileForm
     , fileDescription :: Text
     }
 
--- This is a handler function for the GET request method on the HomeR
--- resource pattern. All of your resource patterns are defined in
--- config/routes
---
--- The majority of the code you will write in Yesod lives in these handler
--- functions. You can spread them across multiple files if you are so
--- inclined, or create a single monolithic file.
-getHomeR :: Handler Html
-getHomeR = do
-    (formWidget, formEnctype) <- generateFormPost sampleForm
-    let submission = Nothing :: Maybe FileForm
-        handlerName = "getHomeR" :: Text
-    allComments <- runDB $ getAllComments
+-- TODO move these datatype definitions to an appropriate file.
+data HomeResponseJSON = HomeResponseJSON
+    { authId :: Text}
 
-    defaultLayout $ do
-        let (commentFormId, commentTextareaId, commentListId) = commentIds
-        aDomId <- newIdent
-        setTitle "Welcome To Yesod!"
-        $(widgetFile "homepage")
+instance ToJSON HomeResponseJSON where
+    toJSON (HomeResponseJSON a)  = object
+        [ "authId" .= a ]
+
+instance FromJSON HomeResponseJSON where
+    parseJSON = withObject "HomeResponseJSON" $ \v -> HomeResponseJSON
+        <$> v .: "authId"
+
+--Serves HTML or JSON depending on the "Accept" header coming from the request.
+getHomeR :: Handler TypedContent
+getHomeR = do
+    muid <- maybeAuthId
+    selectRep $ do
+        provideRep $ defaultLayout $ do
+            $(widgetFile "auth")
+        provideJson $ HomeResponseJSON $ pack $ show muid
 
 postHomeR :: Handler Html
 postHomeR = do
-    ((result, formWidget), formEnctype) <- runFormPost sampleForm
-    let handlerName = "postHomeR" :: Text
-        submission = case result of
-            FormSuccess res -> Just res
-            _ -> Nothing
-    allComments <- runDB $ getAllComments
-
     defaultLayout $ do
-        let (commentFormId, commentTextareaId, commentListId) = commentIds
         aDomId <- newIdent
         setTitle "Welcome To Yesod!"
         $(widgetFile "homepage")
@@ -65,9 +58,3 @@ sampleForm = renderBootstrap3 BootstrapBasicForm $ FileForm
                 , ("placeholder", "File description")
                 ]
             }
-
-commentIds :: (Text, Text, Text)
-commentIds = ("js-commentForm", "js-createCommentTextarea", "js-commentList")
-
-getAllComments :: DB [Entity Comment]
-getAllComments = selectList [] [Asc CommentId]

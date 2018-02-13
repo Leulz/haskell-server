@@ -14,15 +14,10 @@ import Database.Persist.Sql (ConnectionPool, runSqlPool)
 import Text.Hamlet          (hamletFile)
 import Text.Jasmine         (minifym)
 
--- Used only when in "auth-dummy-login" setting is enabled.
-import Yesod.Auth.Dummy
-
-import Yesod.Auth.OpenId    (authOpenId, IdentifierType (Claimed))
 import Yesod.Default.Util   (addStaticContentExternal)
 import Yesod.Core.Types     (Logger)
+import Yesod.Auth.GoogleEmail2
 import qualified Yesod.Core.Unsafe as Unsafe
-import qualified Data.CaseInsensitive as CI
-import qualified Data.Text.Encoding as TE
 
 -- | The foundation datatype for your application. This can be a good place to
 -- keep settings and values requiring initialization before your application
@@ -34,6 +29,8 @@ data App = App
     , appConnPool    :: ConnectionPool -- ^ Database connection pool.
     , appHttpManager :: Manager
     , appLogger      :: Logger
+    , clientId       :: Text
+    , clientSecret   :: Text
     }
 
 data MenuItem = MenuItem
@@ -95,8 +92,8 @@ instance Yesod App where
     defaultLayout widget = do
         master <- getYesod
         mmsg <- getMessage
-
         muser <- maybeAuthPair
+
         mcurrentRoute <- getCurrentRoute
 
         -- Get the breadcrumbs, as defined in the YesodBreadcrumbs instance.
@@ -125,7 +122,6 @@ instance Yesod App where
                     , menuItemAccessCallback = isJust muser
                     }
                 ]
-
         let navbarLeftMenuItems = [x | NavbarLeft x <- menuItems]
         let navbarRightMenuItems = [x | NavbarRight x <- menuItems]
 
@@ -148,7 +144,6 @@ instance Yesod App where
 
     -- Routes not requiring authentication.
     isAuthorized (AuthR _) _ = return Authorized
-    isAuthorized CommentR _ = return Authorized
     isAuthorized HomeR _ = return Authorized
     isAuthorized FaviconR _ = return Authorized
     isAuthorized RobotsR _ = return Authorized
@@ -200,6 +195,7 @@ instance YesodPersist App where
 instance YesodPersistRunner App where
     getDBRunner = defaultGetDBRunner appConnPool
 
+--TODO Add security by implementing HTTPS
 instance YesodAuth App where
     type AuthId App = UserId
 
@@ -216,23 +212,33 @@ instance YesodAuth App where
             Just (Entity uid _) -> return $ Authenticated uid
             Nothing -> Authenticated <$> insert User
                 { userIdent = credsIdent creds
-                , userPassword = Nothing
+                , userMatricula = Nothing
                 }
 
     -- You can add other plugins like Google Email, email or OAuth here
-    authPlugins app = [authOpenId Claimed []] ++ extraAuthPlugins
-        -- Enable authDummy login if enabled.
-        where extraAuthPlugins = [authDummy | appAuthDummyLogin $ appSettings app]
+    authPlugins app =
+        [ authGoogleEmail (clientId app) (clientSecret app)
+        ]
 
     authHttpManager = getHttpManager
 
 -- | Access function to determine if a user is logged in.
 isAuthenticated :: Handler AuthResult
 isAuthenticated = do
+    sessionID <- lookupSession "_ID"
+    matricula <- case sessionID of
+        Just sessid -> do
+            query <- runDB $ getBy $ UniqueUser sessid
+            case query of
+                Just (Entity _ us) -> return (userMatricula us)
+                Nothing -> return Nothing
+        Nothing -> return Nothing
     muid <- maybeAuthId
     return $ case muid of
-        Nothing -> Unauthorized "You must login to access this page"
-        Just _ -> Authorized
+        Nothing -> Unauthorized "Você precisa logar para acessar esta página!"
+        Just _ -> case matricula of
+            Nothing -> Unauthorized "Você precisa cadastrar sua matrícula!"
+            Just _ -> Authorized
 
 instance YesodAuthPersist App
 

@@ -16,12 +16,13 @@ import Text.Jasmine         (minifym)
 
 import Yesod.Default.Util   (addStaticContentExternal)
 import Yesod.Core.Types     (Logger)
-import Yesod.Auth.GoogleEmail2
 import Yesod.Auth.Message
 import qualified Yesod.Core.Unsafe as Unsafe
 
 import Text.Email.Validate
 import Data.ByteString.Char8 as C8
+import qualified Web.JWT as JWT
+import Data.Time.Clock.POSIX
 
 -- | The foundation datatype for your application. This can be a good place to
 -- keep settings and values requiring initialization before your application
@@ -35,6 +36,7 @@ data App = App
     , appLogger      :: Logger
     , clientId       :: Text
     , clientSecret   :: Text
+    , configIssuer   :: Text
     }
 
 data MenuItem = MenuItem
@@ -61,6 +63,7 @@ data MenuTypes
 -- type Widget = WidgetT App IO ()
 mkYesodData "App" $(parseRoutesFile "config/routes")
 
+--TODO: validate this when checking token
 email_domain_permitted :: [Char]
 email_domain_permitted = "ccc.ufcg.edu.br"
 
@@ -156,7 +159,7 @@ instance Yesod App where
     isAuthorized RobotsR _ = return Authorized
     isAuthorized (StaticR _) _ = return Authorized
 
-    isAuthorized ProfileR _ = isAuthenticated
+    isAuthorized ProfileR _ = validateToken
 
     -- This function creates static content files in the static folder
     -- and names them based on a hash of their content. This allows
@@ -230,30 +233,46 @@ instance YesodAuth App where
                         }
 
     -- You can add other plugins like Google Email, email or OAuth here
-    authPlugins app =
-        [ authGoogleEmail (clientId app) (clientSecret app)
-        ]
+    authPlugins _ = []
 
     authHttpManager = getHttpManager
     renderAuthMessage _ _ = portugueseMessage
 
--- | Access function to determine if a user is logged in.
-isAuthenticated :: Handler AuthResult
-isAuthenticated = do
-    sessionID <- lookupSession "_ID"
-    matricula <- case sessionID of
-        Just sessid -> do
-            query <- runDB $ getBy $ UniqueUser sessid
-            case query of
-                Just (Entity _ us) -> return (userMatricula us)
-                Nothing -> return Nothing
-        Nothing -> return Nothing
-    muid <- maybeAuthId
-    return $ case muid of
-        Nothing -> Unauthorized "Você precisa logar para acessar esta página!"
-        Just _ -> case matricula of
-            Nothing -> Unauthorized "Você precisa cadastrar sua matrícula!"
-            Just _ -> Authorized
+isDateExpired :: Maybe JWT.NumericDate -> Maybe JWT.NumericDate -> IO (Maybe Bool)
+isDateExpired exptime currtime = return $ (<) <$> exptime <*> currtime
+
+-- | Access function to determine if a user has authorization to access the protected endpoint.
+validateToken :: Handler AuthResult
+validateToken = do
+    bearerToken <- lookupBearerAuth
+    master <- getYesod
+    when (isNothing bearerToken) $ permissionDenied "No assertion found in POST."
+    let decodedAndVerified  = join $ JWT.decodeAndVerifySignature (JWT.secret (clientSecret master)) <$> bearerToken
+        claimset            = JWT.claims <$> decodedAndVerified
+        audience            = join $ JWT.aud <$> claimset
+        --attributes          = join $ Map.lookup "uri" <$> JWT.unregisteredClaims <$> claimset
+        iss = join $ JWT.iss <$> claimset
+        expiration = join $ JWT.exp <$> claimset
+        -- In a production system, store the jti
+        -- values to guard against a replay attack.
+        -- jti = join $ JWT.jti <$> claimset
+    case audience of
+        Just a -> do
+            case a of
+                Left uniqueAud -> do 
+                    when (Just uniqueAud /= JWT.stringOrURI (clientId master)) $ permissionDenied "Audiência inválida."
+                Right _ -> permissionDenied "Tokens com múltiplas audiências não suportados pelo sistema." -- TODO: have to check the list of auds and see if it contains our client id.
+        _ -> permissionDenied "Audiência não definida."
+    when (iss /= JWT.stringOrURI (configIssuer master)) $
+        permissionDenied "Valor de iss inválido."
+    when (isNothing claimset) $
+        permissionDenied "Conjunto de claims inválido."
+    let x = JWT.numericDate <$> getPOSIXTime >>= isDateExpired expiration
+    --FIXME Currently, this next part has to be at the end of the function.
+    liftIO $ x >>= 
+        \y -> if isNothing y then return $ Unauthorized "Data de expiração não encontrada." 
+            else if y==Just True then return $ Unauthorized "Data de expiração inválida"
+                else return $ Authorized
 
 instance YesodAuthPersist App
 

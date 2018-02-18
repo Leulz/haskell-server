@@ -238,15 +238,15 @@ instance YesodAuth App where
     authHttpManager = getHttpManager
     renderAuthMessage _ _ = portugueseMessage
 
-isDateExpired :: Maybe JWT.NumericDate -> Maybe JWT.NumericDate -> IO (Maybe Bool)
-isDateExpired exptime currtime = return $ (<) <$> exptime <*> currtime
+isDateExpired :: Maybe JWT.NumericDate -> Maybe JWT.NumericDate -> Maybe Bool
+isDateExpired exptime currtime = (<) <$> exptime <*> currtime
 
 -- | Access function to determine if a user has authorization to access the protected endpoint.
 validateToken :: Handler AuthResult
 validateToken = do
     bearerToken <- lookupBearerAuth
     master <- getYesod
-    when (isNothing bearerToken) $ permissionDenied "No assertion found in POST."
+    when (isNothing bearerToken) $ permissionDenied "Token não encontrado nos headers."
     let decodedAndVerified  = join $ JWT.decodeAndVerifySignature (JWT.secret (clientSecret master)) <$> bearerToken
         claimset            = JWT.claims <$> decodedAndVerified
         audience            = join $ JWT.aud <$> claimset
@@ -267,12 +267,11 @@ validateToken = do
         permissionDenied "Valor de iss inválido."
     when (isNothing claimset) $
         permissionDenied "Conjunto de claims inválido."
-    let x = JWT.numericDate <$> getPOSIXTime >>= isDateExpired expiration
-    --FIXME Currently, this next part has to be at the end of the function.
-    liftIO $ x >>= 
-        \y -> if isNothing y then return $ Unauthorized "Data de expiração não encontrada." 
-            else if y==Just True then return $ Unauthorized "Data de expiração inválida"
-                else return $ Authorized
+    mExpired <- liftIO $ isDateExpired expiration . JWT.numericDate <$> getPOSIXTime
+    case mExpired of
+        Nothing -> permissionDenied "Data de expiração não definida."
+        Just expired -> when expired $ permissionDenied "Data de expiração inválida."
+    return Authorized
 
 instance YesodAuthPersist App
 

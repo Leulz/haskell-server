@@ -49,6 +49,9 @@ dependencies:
 - wai
 - foreign-store
 - jwt
+- xlsx
+- lens
+- time
 
 # The library contains all of our application code. The executable
 # defined below is just a thin wrapper.

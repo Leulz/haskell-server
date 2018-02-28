@@ -43,6 +43,11 @@ postHomeR = do
         setTitle "Welcome To Yesod!"
         $(widgetFile "homepage")
 
+getUsuarioR :: UserId -> Handler Value
+getUsuarioR uid = do
+    user <- runDB $ get404 uid
+    return $ object ["user" .= (Entity uid user)]
+
 sampleForm :: Form FileForm
 sampleForm = renderBootstrap3 BootstrapBasicForm $ FileForm
     <$> fileAFormReq "Choose a file"

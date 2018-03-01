@@ -10,7 +10,7 @@ import Network.Google
 import Network.Google.Sheets.Types
 
 import Control.Lens           ((.~), (<&>), (^.), view)
-import Data.Text              (Text, pack)
+import Data.Text              (Text, pack, unpack)
 import System.IO              (stdout)
 import Data.Aeson.Types
 
@@ -45,9 +45,19 @@ exampleGetValue sheetID range = do
   runResourceT . runGoogle env $
     send  (spreadsheetsValuesGet sheetID range )
 
-funcTeste :: String -> String -> IO()
+funcTeste :: String -> String -> IO([String])
 funcTeste sheetID range = do
 	valueRange <- exampleGetValue (pack(sheetID)) (pack(range))
-	putStrLn $ show (valueRange)
-	putStrLn $ show (typeOf (valueRange))
-	putStrLn $ show (valueRange^.vrValues)
+	--putStrLn $ show (valueRange)
+	--putStrLn $ show (typeOf (valueRange))
+	return (imprime (valueRange^.vrValues))
+
+imprime :: [[Value]] -> [String]
+imprime [] = []
+imprime lista = [imprimeL $ head lista]++(imprime (tail lista))
+
+imprimeL :: [Value] -> String
+imprimeL lista = (removeValue $ head lista)
+
+removeValue :: Value -> String
+removeValue (String a) = unpack(a)

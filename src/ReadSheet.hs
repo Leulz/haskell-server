@@ -3,7 +3,7 @@
 
 module ReadSheet (
 	coletarDadosSheet,
-	PessoaAdministrador,
+	PessoaAdministrador(..),
 	getNome,
 	getMatricula,
 	getEmail,

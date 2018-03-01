@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module ReadSheet (
-	funcTeste) where 
+	coletaDadosSheet) where 
 
 ---------------------------------------------------------------------------------
 import Network.Google.Resource.Sheets.Spreadsheets.Get
@@ -28,6 +28,13 @@ import Data.Typeable
 -- which is in your downloaded service config file.
 --
 -- after doing above step just pass the sreadsheet id to the function.
+
+data PessoaAdministrador = PessoaAdministrador
+		{ matricula :: String, 
+		 nome :: String,
+		 email :: String, 
+		 funcao :: String} deriving(Eq, Show) 
+
 exampleGetSheet :: Text -> IO Spreadsheet
 exampleGetSheet sheetID = do
   lgr <- newLogger Debug stdout
@@ -45,19 +52,30 @@ exampleGetValue sheetID range = do
   runResourceT . runGoogle env $
     send  (spreadsheetsValuesGet sheetID range )
 
-funcTeste :: String -> String -> IO([String])
-funcTeste sheetID range = do
+coletaDadosSheet :: String -> String ->  IO()--IO([String])
+coletaDadosSheet sheetID range = do
 	valueRange <- exampleGetValue (pack(sheetID)) (pack(range))
-	--putStrLn $ show (valueRange)
+	putStrLn $ show (valueRange)
 	--putStrLn $ show (typeOf (valueRange))
-	return (imprime (valueRange^.vrValues))
+	putStrLn $ show (coletaPessoasDeMatriz (valueRange ^. vrValues))
+	--return (coletaPessoasDeMatriz (valueRange^.vrValues))
 
-imprime :: [[Value]] -> [String]
-imprime [] = []
-imprime lista = [imprimeL $ head lista]++(imprime (tail lista))
+coletaPessoasDeMatriz :: [[Value]] -> [PessoaAdministrador]
+coletaPessoasDeMatriz [] = []
+coletaPessoasDeMatriz lista = [getPessoa $ head lista]++(coletaPessoasDeMatriz (tail lista))
 
-imprimeL :: [Value] -> String
-imprimeL lista = (removeValue $ head lista)
+getPessoa :: [Value] -> PessoaAdministrador
+getPessoa lista = PessoaAdministrador { matricula = matricula, nome = nome, email = email, funcao = funcao }
+	where
+		matricula = getMatricula lista
+		nome = getNome lista
+		email = getEmail lista
+		funcao = getFuncao lista
+
+getMatricula lista = removeValue (lista !! 0)
+getNome lista = removeValue (lista !! 1)
+getEmail lista = removeValue (lista !! 2)
+getFuncao lista = removeValue (lista !! 3)
 
 removeValue :: Value -> String
 removeValue (String a) = unpack(a)

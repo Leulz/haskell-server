@@ -11,5 +11,5 @@ getProfileR :: Handler Html
 getProfileR = do
     (_, user) <- requireAuthPair
     defaultLayout $ do
-        setTitle . toHtml $ userGoogleIdentifier user <> "'s User page"
+        setTitle . toHtml $ userNome user <> "'s User page"
         $(widgetFile "profile")

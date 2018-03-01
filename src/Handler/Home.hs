@@ -44,9 +44,9 @@ postHomeR = do
         $(widgetFile "homepage")
 
 getUsuarioR :: UserId -> Handler Value
-getUsuarioR uid = do
-    user <- runDB $ get404 uid
-    return $ object ["user" .= (Entity uid user)]
+getUsuarioR googleIdent = do
+    user <- runDB $ get404 $ googleIdent
+    return $ object ["user" .= (Entity googleIdent user)]
 
 sampleForm :: Form FileForm
 sampleForm = renderBootstrap3 BootstrapBasicForm $ FileForm

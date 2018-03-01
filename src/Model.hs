@@ -21,8 +21,7 @@ share [mkPersist sqlSettings, mkMigrate "migrateAll"]
 
 instance ToJSON (Entity User) where
     toJSON (Entity uid u)  = object
-        [ "id" .= toPathPiece uid
-        , "googleIdentifier" .= userGoogleIdentifier u
+        [ "googleIdentifier" .= userGoogleIdentifier u
         , "nome" .= userNome u
         , "email" .= userEmail u
         , "matricula" .= userMatricula u

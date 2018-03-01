@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module ReadSheet (
-	coletaDadosSheet) where 
+	coletarDadosSheet) where 
 
 ---------------------------------------------------------------------------------
 import Network.Google.Resource.Sheets.Spreadsheets.Get
@@ -33,7 +33,10 @@ data PessoaAdministrador = PessoaAdministrador
 		{ matricula :: String, 
 		 nome :: String,
 		 email :: String, 
-		 funcao :: String} deriving(Eq, Show) 
+		 funcao :: String} deriving(Eq, Show)
+
+sheetId = "1N755Sj0TN9DtAme3T4-EoPCHBcnehivfrd0xU6J97yQ"
+range = "Página1!A:D"
 
 exampleGetSheet :: Text -> IO Spreadsheet
 exampleGetSheet sheetID = do
@@ -52,13 +55,16 @@ exampleGetValue sheetID range = do
   runResourceT . runGoogle env $
     send  (spreadsheetsValuesGet sheetID range )
 
-coletaDadosSheet :: String -> String ->  IO()--IO([String])
-coletaDadosSheet sheetID range = do
+coletarDadosSheet :: IO([PessoaAdministrador])
+coletarDadosSheet = coletarDados sheetId range
+
+coletarDados :: String -> String -> IO([PessoaAdministrador])
+coletarDados sheetID range = do
 	valueRange <- exampleGetValue (pack(sheetID)) (pack(range))
-	putStrLn $ show (valueRange)
+	--putStrLn $ show (valueRange)
 	--putStrLn $ show (typeOf (valueRange))
-	putStrLn $ show (coletaPessoasDeMatriz (valueRange ^. vrValues))
-	--return (coletaPessoasDeMatriz (valueRange^.vrValues))
+	--putStrLn $ show (coletaPessoasDeMatriz (valueRange ^. vrValues))
+	return (coletaPessoasDeMatriz (valueRange^.vrValues))
 
 coletaPessoasDeMatriz :: [[Value]] -> [PessoaAdministrador]
 coletaPessoasDeMatriz [] = []

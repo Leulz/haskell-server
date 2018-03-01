@@ -19,7 +19,6 @@ import Yesod.Core.Types     (Logger)
 import Yesod.Auth.Message
 import qualified Yesod.Core.Unsafe as Unsafe
 
-import Text.Email.Validate
 import Data.ByteString.Char8 as C8
 import qualified Web.JWT as JWT
 import Data.Time.Clock.POSIX
@@ -158,6 +157,7 @@ instance Yesod App where
     isAuthorized FaviconR _ = return Authorized
     isAuthorized RobotsR _ = return Authorized
     isAuthorized (StaticR _) _ = return Authorized
+    isAuthorized (UsuarioR _) _ = return Authorized
 
     isAuthorized ProfileR _ = validateToken
 
@@ -219,18 +219,7 @@ instance YesodAuth App where
     -- Override the above two destinations when a Referer: header is present
     redirectToReferer _ = True
 
-    authenticate creds = runDB $ do
-        let domainIsValid = isDomainPermitted <$> (domainPart <$> emailAddress(encodeUtf8(credsIdent creds)))
-        case domainIsValid of
-            Just False -> return $ UserError $ InvalidEmailAddress
-            _ -> do 
-                x <- getBy $ UniqueUser $ credsIdent creds
-                case x of
-                    Just (Entity uid _) -> return $ Authenticated uid
-                    Nothing -> Authenticated <$> insert User
-                        { userIdent = credsIdent creds
-                        , userMatricula = Nothing
-                        }
+    authenticate _ = return $ UserError $ InvalidEmailAddress --This is never used since we don't have server-side authentication, we should remove it... Eventually.
 
     -- You can add other plugins like Google Email, email or OAuth here
     authPlugins _ = []

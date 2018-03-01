@@ -23,7 +23,7 @@ module Application
 import LoadEnv
 
 import Control.Monad.Logger                 (liftLoc, runLoggingT)
-import Database.Persist.Sqlite              (createSqlitePool, runSqlPool,
+import Database.Persist.Sqlite              (rawExecute, createSqlitePool, runSqlPool,
                                              sqlDatabase, sqlPoolSize)
 import Import
 import Language.Haskell.TH.Syntax           (qLocation)
@@ -86,10 +86,12 @@ makeFoundation appSettings = do
     pool <- flip runLoggingT logFunc $ createSqlitePool
         (sqlDatabase $ appDatabaseConf appSettings)
         (sqlPoolSize $ appDatabaseConf appSettings)
-
     -- Perform database migration using our application's logging settings.
-    runLoggingT (runSqlPool (runMigration migrateAll) pool) logFunc -- add runMigrationUnsafe to the import list in Database.Persist.Sqlite and then change runMigration to
-                                                                    -- runMigrationUnsafe if you change the models file and can't run the app. Caution: you will lose all the data in the DB!
+    --FIXME: CHANGE THIS LINE IN PRODUCTION! This is only for migrating the database when the usual "runMigration" doesn't work!
+    --Run "stack exec -- yesod devel -v" with the following line, then comment it and uncomment the other line, save it and the project will rebuild successfully.
+    runLoggingT (runSqlPool (rawExecute ("DROP TABLE IF EXISTS user;") []) pool) logFunc
+    -- runLoggingT (runSqlPool (runMigration migrateAll) pool) logFunc
+                                                                    
     -- Return the foundation
     return $ mkFoundation pool
 

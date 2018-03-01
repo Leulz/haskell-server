@@ -50,4 +50,4 @@ funcTeste sheetID range = do
 	valueRange <- exampleGetValue (pack(sheetID)) (pack(range))
 	putStrLn $ show (valueRange)
 	putStrLn $ show (typeOf (valueRange))
-	--putStrLn $ show (view _2 (10,20))
+	putStrLn $ show (valueRange^.vrValues)

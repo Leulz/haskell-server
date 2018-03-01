@@ -2,7 +2,8 @@
 -- Syntax for this file here: https://github.com/yesodweb/persistent/blob/master/docs/Persistent-entity-syntax.md
 
 User
-    ident Text
+    googleIdentifier Text
+    nome Text
+    email Text
     matricula Text Maybe default=NULL
-    UniqueUser ident
     deriving Typeable

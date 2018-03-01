@@ -5,12 +5,11 @@ module ReadSheet (
 
 ---------------------------------------------------------------------------------
 import Network.Google.Resource.Sheets.Spreadsheets.Get
-import Network.Google.Resource.Sheets.Spreadsheets.Values.Get
 import Network.Google.Sheets
 import Network.Google
 import Network.Google.Sheets.Types
 
-import Control.Lens           ((.~), (<&>), lens)
+import Control.Lens           ((.~), (<&>), (^.), view)
 import Data.Text              (Text, pack)
 import System.IO              (stdout)
 import Data.Aeson.Types
@@ -51,4 +50,4 @@ funcTeste sheetID range = do
 	valueRange <- exampleGetValue (pack(sheetID)) (pack(range))
 	putStrLn $ show (valueRange)
 	putStrLn $ show (typeOf (valueRange))
-	putStrLn $ show (vrValues )
+	--putStrLn $ show (view _2 (10,20))

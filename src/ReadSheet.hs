@@ -1,7 +1,13 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 module ReadSheet (
-	coletarDadosSheet) where 
+	coletarDadosSheet,
+	PessoaAdministrador,
+	getNome,
+	getMatricula,
+	getEmail,
+	getFuncao) where 
 
 ---------------------------------------------------------------------------------
 import Network.Google.Resource.Sheets.Spreadsheets.Get
@@ -9,7 +15,7 @@ import Network.Google.Sheets
 import Network.Google
 import Network.Google.Sheets.Types
 
-import Control.Lens           ((.~), (<&>), (^.), view)
+import Control.Lens           ((.~), (<&>), (^.), view, makeLenses)
 import Data.Text              (Text, pack, unpack)
 import System.IO              (stdout)
 import Data.Aeson.Types
@@ -30,10 +36,11 @@ import Data.Typeable
 -- after doing above step just pass the sreadsheet id to the function.
 
 data PessoaAdministrador = PessoaAdministrador
-		{ matricula :: String, 
-		 nome :: String,
-		 email :: String, 
-		 funcao :: String} deriving(Eq, Show)
+		{ _matricula :: String, 
+		 _nome :: String,
+		 _email :: String, 
+		 _funcao :: String} deriving(Eq, Show)
+makeLenses ''PessoaAdministrador
 
 sheetId = "1N755Sj0TN9DtAme3T4-EoPCHBcnehivfrd0xU6J97yQ"
 range = "Página1!A:D"
@@ -71,17 +78,29 @@ coletaPessoasDeMatriz [] = []
 coletaPessoasDeMatriz lista = [getPessoa $ head lista]++(coletaPessoasDeMatriz (tail lista))
 
 getPessoa :: [Value] -> PessoaAdministrador
-getPessoa lista = PessoaAdministrador { matricula = matricula, nome = nome, email = email, funcao = funcao }
+getPessoa lista = PessoaAdministrador { _matricula = matricula, _nome = nome, _email = email, _funcao = funcao }
 	where
-		matricula = getMatricula lista
-		nome = getNome lista
-		email = getEmail lista
-		funcao = getFuncao lista
+		matricula = getMatriculaFromList lista
+		nome = getNomeFromList lista
+		email = getEmailFromList lista
+		funcao = getFuncaoFromList lista
 
-getMatricula lista = removeValue (lista !! 0)
-getNome lista = removeValue (lista !! 1)
-getEmail lista = removeValue (lista !! 2)
-getFuncao lista = removeValue (lista !! 3)
+getMatriculaFromList lista = removeValue (lista !! 0)
+getNomeFromList lista = removeValue (lista !! 1)
+getEmailFromList lista = removeValue (lista !! 2)
+getFuncaoFromList lista = removeValue (lista !! 3)
 
 removeValue :: Value -> String
 removeValue (String a) = unpack(a)
+
+getNome :: PessoaAdministrador-> String
+getNome pessoa = pessoa^.nome
+
+getMatricula :: PessoaAdministrador-> String
+getMatricula pessoa = pessoa^.matricula
+
+getEmail :: PessoaAdministrador-> String
+getEmail pessoa = pessoa^.email
+
+getFuncao :: PessoaAdministrador-> String
+getFuncao pessoa = pessoa^.funcao

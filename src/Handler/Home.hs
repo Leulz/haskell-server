@@ -43,10 +43,16 @@ postHomeR = do
         setTitle "Welcome To Yesod!"
         $(widgetFile "homepage")
 
-getUsuarioR :: UserId -> Handler Value
+getUsuarioR :: Text -> Handler Value
 getUsuarioR googleIdent = do
-    user <- runDB $ get404 $ googleIdent
-    return $ object ["user" .= (Entity googleIdent user)]
+    user <- runDB $ getBy404 $ UniqueUser googleIdent
+    return $ object ["user" .= user]
+
+postUsuariosR :: Handler ()
+postUsuariosR = do
+    user <- requireJsonBody :: Handler User
+    _    <- runDB $ insert user
+    sendResponseStatus status201 ("CREATED" :: Text)
 
 sampleForm :: Form FileForm
 sampleForm = renderBootstrap3 BootstrapBasicForm $ FileForm

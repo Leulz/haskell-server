@@ -2,12 +2,8 @@
 {-# LANGUAGE TemplateHaskell #-}
 
 module ReadSheet (
-	coletarDadosSheet,
-	PessoaAdministrador(..),
-	getNome,
-	getMatricula,
-	getEmail,
-	getFuncao) where 
+	containsMatricula,
+	getFuncaoPorMatricula) where 
 
 ---------------------------------------------------------------------------------
 import Network.Google.Resource.Sheets.Spreadsheets.Get
@@ -64,6 +60,18 @@ exampleGetValue sheetID range = do
 
 coletarDadosSheet :: IO([PessoaAdministrador])
 coletarDadosSheet = coletarDados sheetId range
+
+containsMatricula matricula = do
+	listaMatricula <- (filtraPessoas matricula)
+	if( listaMatricula == []) then return False else return True 
+
+filtraPessoas matricula = do 
+	pessoas <- coletarDadosSheet
+	return (Prelude.filter(\pessoa -> (getMatricula pessoa)== matricula) pessoas)
+
+getFuncaoPorMatricula matricula = do
+	listaPessoa <- (filtraPessoas matricula)
+	return (getFuncao (head listaPessoa))
 
 coletarDados :: String -> String -> IO([PessoaAdministrador])
 coletarDados sheetID range = do

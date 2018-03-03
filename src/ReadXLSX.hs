@@ -34,8 +34,8 @@ convertCellValueToString:: Maybe(CellValue) -> Maybe(String)
 convertCellValueToString input = fmap (getCellValue) (input)
 
 containsMatricula matricula = do
-	lsitaMatricula <- (filtraMatricula matricula)
-	if( lsitaMatricula == []) then return False else return True 
+	listaMatricula <- (filtraMatricula matricula)
+	if( listaMatricula == []) then return False else return True 
 
 
 filtraMatricula matricula = do 

@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 module ReadXLSX
-    ( capturaMatriculas
+    (containsMatricula
     ) where
 
 import Codec.Xlsx
@@ -11,10 +11,11 @@ import Data.Text as T
 
 fileName = "frequencia_2017.2_1411302-01_080207235.xlsx"
 nomePlanilha = "Frequencia"
+linha = 3
 
 -- valor inteiro começa de 1
 capturaMatriculas :: IO([Maybe(String)])
-capturaMatriculas = verifica 3 []
+capturaMatriculas = verifica linha []
 
 -- linha começa de 1
 verifica :: Int -> [Maybe(String)] -> IO([Maybe(String)])
@@ -32,6 +33,14 @@ getCellValue (CellText a) = T.unpack(a)
 convertCellValueToString:: Maybe(CellValue) -> Maybe(String)
 convertCellValueToString input = fmap (getCellValue) (input)
 
+containsMatricula matricula = do
+	lsitaMatricula <- (filtraMatricula matricula)
+	if( lsitaMatricula == []) then return False else return True 
+
+
+filtraMatricula matricula = do 
+	matriculas <- capturaMatriculas
+	return (Prelude.filter(==(Just matricula)) matriculas)
 
 -- Trecho de código morto, porém util
 -- funcao de teste não compartilhada nem utilizada no modulo

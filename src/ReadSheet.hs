@@ -1,7 +1,13 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 module ReadSheet (
-	funcTeste) where 
+	coletarDadosSheet,
+	PessoaAdministrador(..),
+	getNome,
+	getMatricula,
+	getEmail,
+	getFuncao) where 
 
 ---------------------------------------------------------------------------------
 import Network.Google.Resource.Sheets.Spreadsheets.Get
@@ -9,8 +15,8 @@ import Network.Google.Sheets
 import Network.Google
 import Network.Google.Sheets.Types
 
-import Control.Lens           ((.~), (<&>), (^.), view)
-import Data.Text              (Text, pack)
+import Control.Lens           ((.~), (<&>), (^.), view, makeLenses)
+import Data.Text              (Text, pack, unpack)
 import System.IO              (stdout)
 import Data.Aeson.Types
 
@@ -28,6 +34,17 @@ import Data.Typeable
 -- which is in your downloaded service config file.
 --
 -- after doing above step just pass the sreadsheet id to the function.
+
+data PessoaAdministrador = PessoaAdministrador
+		{ _matricula :: String, 
+		 _nome :: String,
+		 _email :: String, 
+		 _funcao :: String} deriving(Eq, Show)
+makeLenses ''PessoaAdministrador
+
+sheetId = "1N755Sj0TN9DtAme3T4-EoPCHBcnehivfrd0xU6J97yQ"
+range = "Página1!A:D"
+
 exampleGetSheet :: Text -> IO Spreadsheet
 exampleGetSheet sheetID = do
   lgr <- newLogger Debug stdout
@@ -45,9 +62,45 @@ exampleGetValue sheetID range = do
   runResourceT . runGoogle env $
     send  (spreadsheetsValuesGet sheetID range )
 
-funcTeste :: String -> String -> IO()
-funcTeste sheetID range = do
+coletarDadosSheet :: IO([PessoaAdministrador])
+coletarDadosSheet = coletarDados sheetId range
+
+coletarDados :: String -> String -> IO([PessoaAdministrador])
+coletarDados sheetID range = do
 	valueRange <- exampleGetValue (pack(sheetID)) (pack(range))
-	putStrLn $ show (valueRange)
-	putStrLn $ show (typeOf (valueRange))
-	putStrLn $ show (valueRange^.vrValues)
+	--putStrLn $ show (valueRange)
+	--putStrLn $ show (typeOf (valueRange))
+	--putStrLn $ show (coletaPessoasDeMatriz (valueRange ^. vrValues))
+	return (coletaPessoasDeMatriz (valueRange^.vrValues))
+
+coletaPessoasDeMatriz :: [[Value]] -> [PessoaAdministrador]
+coletaPessoasDeMatriz [] = []
+coletaPessoasDeMatriz lista = [getPessoa $ head lista]++(coletaPessoasDeMatriz (tail lista))
+
+getPessoa :: [Value] -> PessoaAdministrador
+getPessoa lista = PessoaAdministrador { _matricula = matricula, _nome = nome, _email = email, _funcao = funcao }
+	where
+		matricula = getMatriculaFromList lista
+		nome = getNomeFromList lista
+		email = getEmailFromList lista
+		funcao = getFuncaoFromList lista
+
+getMatriculaFromList lista = removeValue (lista !! 0)
+getNomeFromList lista = removeValue (lista !! 1)
+getEmailFromList lista = removeValue (lista !! 2)
+getFuncaoFromList lista = removeValue (lista !! 3)
+
+removeValue :: Value -> String
+removeValue (String a) = unpack(a)
+
+getNome :: PessoaAdministrador-> String
+getNome pessoa = pessoa^.nome
+
+getMatricula :: PessoaAdministrador-> String
+getMatricula pessoa = pessoa^.matricula
+
+getEmail :: PessoaAdministrador-> String
+getEmail pessoa = pessoa^.email
+
+getFuncao :: PessoaAdministrador-> String
+getFuncao pessoa = pessoa^.funcao

@@ -6,4 +6,5 @@ User
     nome Text
     email Text
     matricula Text Maybe default=NULL
+    UniqueUser googleIdentifier
     deriving Typeable

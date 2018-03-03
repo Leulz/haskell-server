@@ -157,7 +157,8 @@ instance Yesod App where
     isAuthorized FaviconR _ = return Authorized
     isAuthorized RobotsR _ = return Authorized
     isAuthorized (StaticR _) _ = return Authorized
-    isAuthorized (UsuarioR _) _ = return Authorized
+    isAuthorized (UsuarioR _) _ = return Authorized --should validateToken
+    isAuthorized UsuariosR _ = return Authorized --should validateToken
 
     isAuthorized ProfileR _ = validateToken
 

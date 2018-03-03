@@ -20,9 +20,8 @@ share [mkPersist sqlSettings, mkMigrate "migrateAll"]
     $(persistFileWith lowerCaseSettings "config/models")
 
 instance ToJSON (Entity User) where
-    toJSON (Entity uid u)  = object
-        [ "id" .= toPathPiece uid
-        , "googleIdentifier" .= userGoogleIdentifier u
+    toJSON (Entity _ u)  = object
+        [ "googleIdentifier" .= userGoogleIdentifier u
         , "nome" .= userNome u
         , "email" .= userEmail u
         , "matricula" .= userMatricula u

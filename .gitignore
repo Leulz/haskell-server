@@ -20,3 +20,5 @@ cabal.sandbox.config
 *~
 \#*
 haskell-angular.cabal
+.idea/
+rest-func.iml

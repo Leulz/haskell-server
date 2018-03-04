@@ -9,7 +9,7 @@
 
 / HomeR GET POST
 
-/usuario UsuariosR POST
-/usuario/#Text UsuarioR GET
+/api/usuario UsuariosR POST
+/api/usuario/#Text UsuarioR GET
 
 /profile ProfileR GET

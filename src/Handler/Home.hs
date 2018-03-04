@@ -8,6 +8,7 @@ module Handler.Home where
 import Import
 import Data.Aeson
 import Yesod.Form.Bootstrap3 (BootstrapFormLayout (..), renderBootstrap3)
+import ReadXLSX (containsMatricula)
 
 -- Define our data that will be used for creating the form.
 data FileForm = FileForm
@@ -51,8 +52,13 @@ getUsuarioR googleIdent = do
 postUsuariosR :: Handler ()
 postUsuariosR = do
     user <- requireJsonBody :: Handler User
-    _    <- runDB $ insert user
-    sendResponseStatus status201 ("CREATED" :: Text)
+    isPermittedMatricula <- liftIO $ containsMatricula $ unpack $ userMatricula user
+    case isPermittedMatricula of
+        True -> do
+            _    <- runDB $ insert user
+            sendResponseStatus status201 ("CREATED" :: Text)
+        False -> sendResponseStatus status400 ("MATRÍCULA INVÁLIDA" :: Text)
+    
 
 sampleForm :: Form FileForm
 sampleForm = renderBootstrap3 BootstrapBasicForm $ FileForm

@@ -89,8 +89,8 @@ makeFoundation appSettings = do
     -- Perform database migration using our application's logging settings.
     --FIXME: CHANGE THIS LINE IN PRODUCTION! This is only for migrating the database when the usual "runMigration" doesn't work!
     --Run "stack exec -- yesod devel -v" with the following line, then comment it and uncomment the other line, save it and the project will rebuild successfully.
-    runLoggingT (runSqlPool (rawExecute ("DROP TABLE IF EXISTS user;") []) pool) logFunc
-    -- runLoggingT (runSqlPool (runMigration migrateAll) pool) logFunc
+    -- runLoggingT (runSqlPool (rawExecute ("DROP TABLE IF EXISTS user;") []) pool) logFunc
+    runLoggingT (runSqlPool (runMigration migrateAll) pool) logFunc
                                                                     
     -- Return the foundation
     return $ mkFoundation pool

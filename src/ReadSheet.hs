@@ -61,14 +61,21 @@ exampleGetValue sheetID range = do
 coletarDadosSheet :: IO([PessoaAdministrador])
 coletarDadosSheet = coletarDados sheetId range
 
+-- Dada uma matricula retorna True se ela existir no conjunto de
+-- matriculas lidos do arquivlo spreadsheet Google. 
+containsMatricula:: String -> IO Bool
 containsMatricula matricula = do
-	listaMatricula <- (filtraPessoas matricula)
-	if( listaMatricula == []) then return False else return True 
+  pessoas <- coletarDadosSheet
+  return $ (any ((==matricula) . _matricula) pessoas)
 
+filtraPessoas:: String -> IO ([PessoaAdministrador])
 filtraPessoas matricula = do 
 	pessoas <- coletarDadosSheet
 	return (Prelude.filter(\pessoa -> (getMatricula pessoa)== matricula) pessoas)
 
+-- Dada uma matricula retorna o cargo/função da pessoa dentro das informaçõẽs
+-- lidas di arquivlo spreadsheet Google.
+getFuncaoPorMatricula:: String -> IO String
 getFuncaoPorMatricula matricula = do
 	listaPessoa <- (filtraPessoas matricula)
 	return (getFuncao (head listaPessoa))

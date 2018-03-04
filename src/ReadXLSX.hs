@@ -33,14 +33,12 @@ getCellValue (CellText a) = T.unpack(a)
 convertCellValueToString:: Maybe(CellValue) -> Maybe(String)
 convertCellValueToString input = fmap (getCellValue) (input)
 
+-- Dada uma matrícula retorna True se ela existir no conjunto de
+-- matrículas lidos do arquivlo XLSX
+containsMatricula:: String -> IO Bool
 containsMatricula matricula = do
-	listaMatricula <- (filtraMatricula matricula)
-	if( listaMatricula == []) then return False else return True 
-
-
-filtraMatricula matricula = do 
-	matriculas <- capturaMatriculas
-	return (Prelude.filter(==(Just matricula)) matriculas)
+  matriculas <- capturaMatriculas
+  return $ (Prelude.any (Just matricula==) matriculas)
 
 -- Trecho de código morto, porém util
 -- funcao de teste não compartilhada nem utilizada no modulo

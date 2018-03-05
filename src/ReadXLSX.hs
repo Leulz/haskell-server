@@ -31,6 +31,7 @@ verifica linha lista = do
 
 getCellValue :: CellValue -> String
 getCellValue (CellText a) = T.unpack(a)
+getCellValue _ = ""
 
 convertCellValueToString:: Maybe(CellValue) -> Maybe(String)
 convertCellValueToString input = fmap (getCellValue) (input)

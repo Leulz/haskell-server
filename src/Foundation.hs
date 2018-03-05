@@ -237,7 +237,7 @@ validateToken = do
     bearerToken <- lookupBearerAuth
     master <- getYesod
     when (isNothing bearerToken) $ permissionDenied "Token não encontrado nos headers."
-    let decodedAndVerified  = join $ JWT.decodeAndVerifySignature (JWT.secret (clientSecret master)) <$> bearerToken
+    let decodedAndVerified  = join $ JWT.decode <$> bearerToken
         claimset            = JWT.claims <$> decodedAndVerified
         audience            = join $ JWT.aud <$> claimset
         --attributes          = join $ Map.lookup "uri" <$> JWT.unregisteredClaims <$> claimset

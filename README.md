@@ -20,3 +20,13 @@ stack exec -- yesod devel
 ```
 
 O serviço estará disponível na porta 3000.
+
+Para acessar leitor do google sheet:
+- criar uma conta no site google developers - console.cloud.google.com
+- ativar api do google sheets
+- em IAM & Admin, criar uma conta de serviço e compartilhar a sheet com email gerado
+- criar credencial, chave conta de serviço e baixar a chave 'algumnome.json'
+- alterar nome da chave para 'application_default_credentials' e em seguida salvar no endereço ~/.config/gcloud/
+- por fim alterar sheetId e range no arquivo ReadSheet.hs
+
+para mais informações sobre como acessar google sheets, [link para exeplo da api](https://github.com/brendanhay/gogol/blob/develop/examples/src/Example/Sheets.hs)

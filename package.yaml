@@ -53,8 +53,13 @@ dependencies:
 - lens
 - time
 - gogol
-- gogol-sheets 
-
+- gogol-sheets
+- x509
+- x509-store
+- RSA
+- crypto-pubkey-types
+- cryptonite
+- base64-bytestring
 # The library contains all of our application code. The executable
 # defined below is just a thin wrapper.
 library:

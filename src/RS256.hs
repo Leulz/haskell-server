@@ -1,3 +1,5 @@
+--TODO Change from String to Text
+
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
@@ -6,7 +8,7 @@
 {-# LANGUAGE ExplicitForAll #-}
 {-# LANGUAGE RankNTypes #-}
 
-module RS256 where
+module RS256 (verifyGoogleJWT) where
 
 import qualified Data.Text as T
 import Data.String (fromString)
@@ -92,8 +94,8 @@ extractPayloadSig jwt = do
     let s = getSignature splittedJWT
     JWTPayloadSig p s
 
-verifyJWT :: String -> IO (Bool)
-verifyJWT jwt = do
+verifyGoogleJWT :: String -> IO (Bool)
+verifyGoogleJWT jwt = do
     -- let jwt = "eyJhbGciOiJSUzI1NiIsImtpZCI6ImM2ZjBlZTE2YmU3MGM0ODhkZDM5ZGI3MGY2ZjRkMTM3YTA0ODkxZTMifQ.eyJhenAiOiI1ODI0MzczNzE4NDctdHJza2hubWdzaXFtcmZyZGJ1cmxlZG44anVvMWVzc3QuYXBwcy5nb29nbGV1c2VyY29udGVudC5jb20iLCJhdWQiOiI1ODI0MzczNzE4NDctdHJza2hubWdzaXFtcmZyZGJ1cmxlZG44anVvMWVzc3QuYXBwcy5nb29nbGV1c2VyY29udGVudC5jb20iLCJzdWIiOiIxMDYzMjAxODYzMDAzNDQ1ODcyNzEiLCJoZCI6ImNjYy51ZmNnLmVkdS5iciIsImVtYWlsIjoibGVvLnZpdGFsQGNjYy51ZmNnLmVkdS5iciIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlLCJhdF9oYXNoIjoibGxKRGFlcHVVYlFteVBwWS1lbnZQUSIsImV4cCI6MTUyMTYwMDQ2MywiaXNzIjoiYWNjb3VudHMuZ29vZ2xlLmNvbSIsImp0aSI6IjhmMTFkNDU5MTgwZmI3NTExY2UwNDc2Zjc4NmFlNDU1YzJjMTVjOTAiLCJpYXQiOjE1MjE1OTY4NjMsIm5hbWUiOiJMZW8gVml0YWwiLCJwaWN0dXJlIjoiaHR0cHM6Ly9saDUuZ29vZ2xldXNlcmNvbnRlbnQuY29tLy1MSXBEbE1Bb19hcy9BQUFBQUFBQUFBSS9BQUFBQUFBQUFBQS9BR2k0Z2Z4ZmlhTFo3OEdZYUJIZTY0djBmMlBndElXRDZnL3M5Ni1jL3Bob3RvLmpwZyIsImdpdmVuX25hbWUiOiJMZW8iLCJmYW1pbHlfbmFtZSI6IlZpdGFsIiwibG9jYWxlIjoicHQifQ.P4x8zyDn3jE5MUqvetVVTQOKj_GUIvL1leRxxgZ-_NPWSgA3dB6BRJNPLKwlMXTKtBThD5iUmDiJ6NqdjMI5WVbkBHmVeh5ZmnzqO-9RGq_Di72fSiz60p4jMzDOVmvcfnzcLVob0S3flKWSwflxGz3Wkce2-yyeJX1HEMQYPtO6f8I_-w43cgnL8J1dJPpOhbxF-m9RYUuI6Xhnk_ZeOMZr9q1CZa5tJmsepfYsRikluNXLaMzMvN0TcQvunbjR3ZXTY10Sw6cv4CKCi_CsIMdKlDRu1GodmlLelx6lg26s9j2PFzwOCgzBWf8fXHcISN0X5S_0pPxrDHjA_3lytA"
     h <- liftIO $ return (either (\_ -> error "Error decoding JWT!") (decode . BS.fromStrict) (BS64.decode $ C8.pack $ getHeaderWithPadding jwt) :: Maybe JWTHeader)
     k <- return $ getKidFromHeader h

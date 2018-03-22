@@ -19,9 +19,11 @@ import Yesod.Core.Types     (Logger)
 import Yesod.Auth.Message
 import qualified Yesod.Core.Unsafe as Unsafe
 
+import Data.Text as T
 import Data.ByteString.Char8 as C8
 import qualified Web.JWT as JWT
 import Data.Time.Clock.POSIX
+import RS256
 
 -- | The foundation datatype for your application. This can be a good place to
 -- keep settings and values requiring initialization before your application
@@ -235,8 +237,12 @@ isDateExpired exptime currtime = (<) <$> exptime <*> currtime
 validateToken :: Handler AuthResult
 validateToken = do
     bearerToken <- lookupBearerAuth
+    case bearerToken of
+        Nothing -> permissionDenied "Token não encontrado nos headers."
+        Just token -> do
+            isTokenValid <- liftIO $ verifyGoogleJWT $ T.unpack token
+            when (not isTokenValid) $ permissionDenied "Assinatura do token inválida."
     master <- getYesod
-    when (isNothing bearerToken) $ permissionDenied "Token não encontrado nos headers."
     let decodedAndVerified  = join $ JWT.decode <$> bearerToken
         claimset            = JWT.claims <$> decodedAndVerified
         audience            = join $ JWT.aud <$> claimset

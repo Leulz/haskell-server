@@ -62,6 +62,7 @@ dependencies:
 - base64-bytestring
 - wreq
 - lens-aeson
+- split
 
 # The library contains all of our application code. The executable
 # defined below is just a thin wrapper.

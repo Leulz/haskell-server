@@ -1,4 +1,5 @@
 --TODO Change from String to Text
+--TODO Treat errors appropriately
 
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell #-}

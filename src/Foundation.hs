@@ -20,8 +20,8 @@ import Yesod.Auth.Message
 import qualified Yesod.Core.Unsafe as Unsafe
 
 import Data.Text as T
-import Data.ByteString.Char8 as C8
-import qualified Web.JWT as JWT
+import qualified Data.ByteString.Char8 as C8
+import qualified Jose.Jwt as JWT
 import Data.Time.Clock.POSIX
 import RS256
 
@@ -159,8 +159,8 @@ instance Yesod App where
     isAuthorized FaviconR _ = return Authorized
     isAuthorized RobotsR _ = return Authorized
     isAuthorized (StaticR _) _ = return Authorized
-    isAuthorized (UsuarioR _) _ = return Authorized --should validateToken
-    isAuthorized UsuariosR _ = return Authorized --should validateToken
+    isAuthorized (UsuarioR _) _ = validateToken
+    isAuthorized UsuariosR _ = validateToken
 
     isAuthorized ProfileR _ = validateToken
 
@@ -230,44 +230,42 @@ instance YesodAuth App where
     authHttpManager = getHttpManager
     renderAuthMessage _ _ = portugueseMessage
 
-isDateExpired :: Maybe JWT.NumericDate -> Maybe JWT.NumericDate -> Maybe Bool
+isDateExpired :: Maybe JWT.IntDate -> Maybe JWT.IntDate -> Maybe Bool
 isDateExpired exptime currtime = (<) <$> exptime <*> currtime
+
+isAudienceValid :: [Text] -> Text -> Bool
+isAudienceValid audList expectedAud = elem expectedAud audList
+
+validateClaims :: JWT.JwtClaims -> Handler AuthResult
+validateClaims claims = do
+    master <- getYesod
+    let audience = JWT.jwtAud $ claims
+        iss = JWT.jwtIss claims
+        expiration = JWT.jwtExp claims
+    case audience of
+        Just audList -> do
+            when (not $ isAudienceValid audList (clientId master)) $ permissionDenied "Audiência inválida!"
+        _ -> permissionDenied "Audiência não definida."
+    when (iss /= Just (configIssuer master)) $
+        permissionDenied "Valor de iss inválido."
+    currtime <- liftIO getPOSIXTime
+    mExpired <- return $ isDateExpired expiration (Just (JWT.IntDate currtime))
+    case mExpired of
+        Nothing -> permissionDenied "Data de expiração não definida."
+        Just expired -> when expired $ permissionDenied "Data de expiração inválida."
+    return Authorized
 
 -- | Access function to determine if a user has authorization to access the protected endpoint.
 validateToken :: Handler AuthResult
 validateToken = do
     bearerToken <- lookupBearerAuth
-    case bearerToken of
+    authorization <- case bearerToken of
         Nothing -> permissionDenied "Token não encontrado nos headers."
         Just token -> do
             isTokenValid <- liftIO $ verifyGoogleJWT $ T.unpack token
-            when (not isTokenValid) $ permissionDenied "Assinatura do token inválida."
-    master <- getYesod
-    let decodedAndVerified  = join $ JWT.decode <$> bearerToken
-        claimset            = JWT.claims <$> decodedAndVerified
-        audience            = join $ JWT.aud <$> claimset
-        --attributes          = join $ Map.lookup "uri" <$> JWT.unregisteredClaims <$> claimset
-        iss = join $ JWT.iss <$> claimset
-        expiration = join $ JWT.exp <$> claimset
-        -- In a production system, store the jti
-        -- values to guard against a replay attack.
-        -- jti = join $ JWT.jti <$> claimset
-    case audience of
-        Just a -> do
-            case a of
-                Left uniqueAud -> do 
-                    when (Just uniqueAud /= JWT.stringOrURI (clientId master)) $ permissionDenied "Audiência inválida."
-                Right _ -> permissionDenied "Tokens com múltiplas audiências não suportados pelo sistema." -- TODO: have to check the list of auds and see if it contains our client id.
-        _ -> permissionDenied "Audiência não definida."
-    when (iss /= JWT.stringOrURI (configIssuer master)) $
-        permissionDenied "Valor de iss inválido."
-    when (isNothing claimset) $
-        permissionDenied "Conjunto de claims inválido."
-    mExpired <- liftIO $ isDateExpired expiration . JWT.numericDate <$> getPOSIXTime
-    case mExpired of
-        Nothing -> permissionDenied "Data de expiração não definida."
-        Just expired -> when expired $ permissionDenied "Data de expiração inválida."
-    return Authorized
+            let claimset = JWT.decodeClaims $ encodeUtf8 token
+            return $ either (\_ -> permissionDenied $ T.pack ("Claims inválidos: " ++ (show claimset))) (validateClaims . snd) (claimset)
+    authorization
 
 instance YesodAuthPersist App
 

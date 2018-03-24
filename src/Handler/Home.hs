@@ -49,6 +49,7 @@ getUsuarioR googleIdent = do
     user <- runDB $ getBy404 $ UniqueUser googleIdent
     return $ object ["user" .= user]
 
+--FIXME Returning error 500 when one tries to register a user already registered
 postUsuariosR :: Handler ()
 postUsuariosR = do
     user <- requireJsonBody :: Handler User
